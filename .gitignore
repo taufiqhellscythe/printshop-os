@@ -5,22 +5,8 @@ __pycache__/
 *.pyo
 .pytest_cache/
 
-# --- Secrets: NEVER commit ---
-.env
-.env.bak
-.env.bak.*
-windows-agent/config.env
-*.pem
-*.key
-
-# --- Runtime data (customer data, uploads, DB) ---
-data/printshop.db
-data/printshop.db-*
-data/uploads/*
-!data/uploads/.gitkeep
-server.log
-*.log
-
 # --- Build artifacts / scratch ---
-PrintShop-Windows-Agent.zip
 .design-backup/
+
+# NOTE: atas permintaan pemilik repo, .env / config.env / database ikut
+# di-commit untuk keperluan backup penuh. Repo WAJIB tetap privat.

@@ -1,0 +1,6 @@
+2026-07-24 03:39:38 === SELF TEST ===
+2026-07-24 03:39:38 config: /home/ubuntu/printshop-os/windows-agent/config.env exists=True
+2026-07-24 03:39:38 URL=http://127.0.0.1:8088
+2026-07-24 03:39:38 printer=Epson L3110 Series
+2026-07-24 03:39:38 server health: {'ok': True, 'queued': 0, 'printing': 0}
+2026-07-24 03:39:38 SELF TEST OK
