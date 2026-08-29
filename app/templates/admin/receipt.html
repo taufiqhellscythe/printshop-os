@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Struk {{ order.code }}</title>
+  <style>
+    body { font-family: ui-monospace, Menlo, monospace; font-size: 12px; margin: 0; padding: 12px; }
+    .receipt { width: 72mm; }
+    h1 { font-size: 14px; margin: 0 0 4px; text-align: center; }
+    .muted { color: #555; text-align: center; margin-bottom: 8px; }
+    .row { display: flex; justify-content: space-between; margin: 2px 0; }
+    hr { border: none; border-top: 1px dashed #999; margin: 8px 0; }
+    .total { font-weight: bold; font-size: 14px; }
+    .no-print { margin-top: 16px; }
+    button { padding: 8px 12px; }
+  </style>
+</head>
+<body>
+  <div class="receipt">
+    <h1>{{ shop_name }}</h1>
+    <div class="muted">
+      {% if shop_address %}{{ shop_address }}<br>{% endif %}
+      {% if shop_phone %}{{ shop_phone }}<br>{% endif %}
+      STRUK ORDER
+    </div>
+    <div class="row"><span>Kode</span><span>{{ order.code }}</span></div>
+    <div class="row"><span>Tanggal</span><span>{{ order.created_at[:16].replace('T',' ') }}</span></div>
+    <div class="row"><span>Pelanggan</span><span>{{ order.customer_name }}</span></div>
+    <div class="row"><span>Status</span><span>{{ order.status }} / {{ order.payment_status }}</span></div>
+    <hr>
+    {% for i in order["items"] %}
+    <div class="row"><span>{{ i.service_name }} x{{ i.qty }}</span><span>{{ rupiah(i.line_total) }}</span></div>
+    {% endfor %}
+    {% for a in order["addons"] %}
+    <div class="row"><span>+ {{ a.addon_name }}</span><span>{{ rupiah(a.price) }}</span></div>
+    {% endfor %}
+    <hr>
+    <div class="row"><span>Subtotal</span><span>{{ rupiah(order.subtotal) }}</span></div>
+    <div class="row"><span>Diskon</span><span>-{{ rupiah(order.discount) }}</span></div>
+    <div class="row"><span>Add-on</span><span>{{ rupiah(order.addons_total) }}</span></div>
+    <div class="row total"><span>TOTAL</span><span>{{ rupiah(order.total) }}</span></div>
+    {% if order.payment_method %}<div class="row"><span>Bayar</span><span>{{ order.payment_method }}</span></div>{% endif %}
+    <hr>
+    <div class="muted">Lacak: /track/{{ order.track_token }}<br>Terima kasih!</div>
+  </div>
+  <div class="no-print">
+    <button onclick="window.print()">Print struk</button>
+    <button onclick="window.close()">Tutup</button>
+  </div>
+</body>
+</html>

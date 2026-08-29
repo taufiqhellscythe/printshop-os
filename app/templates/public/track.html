@@ -1,0 +1,22 @@
+{% extends "base_public.html" %}
+{% block title %}Lacak Order · {{ shop_name }}{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+  <h1 class="text-2xl font-bold mb-1">Lacak Order</h1>
+  <p class="text-slate-500 mb-6">Masukkan kode order (contoh PS260724-001).</p>
+  {% if error %}
+  <div class="mb-4 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 px-4 py-3 text-sm">{{ error }}</div>
+  {% endif %}
+  <form method="post" action="/track" class="rounded-3xl bg-white border p-5 space-y-4 shadow-sm">
+    <div>
+      <label class="label">Kode Order</label>
+      <input class="input" name="code" required value="{{ code }}" placeholder="PS260724-001" style="text-transform:uppercase">
+    </div>
+    <div>
+      <label class="label">No. HP (opsional)</label>
+      <input class="input" name="phone" placeholder="untuk verifikasi">
+    </div>
+    <button class="btn btn-primary w-full py-3" type="submit">Lacak</button>
+  </form>
+</div>
+{% endblock %}

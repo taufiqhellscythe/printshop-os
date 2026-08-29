@@ -1,0 +1,50 @@
+{% extends "base_public.html" %}
+{% block title %}Daftar Harga · {{ shop_name }}{% endblock %}
+{% block content %}
+<div class="mb-8">
+  <h1 class="text-3xl font-extrabold tracking-tight text-ink-900">Daftar Harga</h1>
+  <p class="text-ink-500 mt-2 text-lg">Harga transparan. Diskon volume otomatis saat order.</p>
+</div>
+<div class="table-wrap">
+  <table class="data">
+    <thead>
+      <tr><th>Layanan</th><th>Kategori</th><th>Harga</th><th>Min. charge</th></tr>
+    </thead>
+    <tbody>
+      {% for s in services %}
+      <tr>
+        <td>
+          <div class="font-semibold text-ink-900">{{ s.name }}</div>
+          <div class="text-xs text-ink-400 mt-0.5">{{ s.description }}</div>
+        </td>
+        <td class="capitalize text-ink-600">{{ s.category }}</td>
+        <td class="font-semibold text-ink-900">{{ rupiah(s.price) }}<span class="text-ink-400 font-normal">/{{ s.unit }}</span></td>
+        <td class="text-ink-600">{{ rupiah(s.min_charge) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="grid md:grid-cols-2 gap-4 mt-6">
+  <div class="card p-6">
+    <h2 class="font-semibold text-ink-900 mb-4">Add-on</h2>
+    <ul class="space-y-3 text-sm">
+      {% for a in addons %}
+      <li class="flex justify-between items-center"><span class="text-ink-600">{{ a.name }}</span><span class="font-semibold text-ink-900">{{ rupiah(a.price) }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="card p-6">
+    <h2 class="font-semibold text-ink-900 mb-4">Diskon volume</h2>
+    <ul class="space-y-3 text-sm">
+      {% for d in discounts %}
+      <li class="flex justify-between items-center"><span class="text-ink-600">{{ d.name }}</span><span class="font-semibold text-emerald-600">−{{ d.percent }}%</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+<div class="mt-8">
+  <a href="/order" class="btn btn-primary px-5 py-2.5">Order Sekarang →</a>
+</div>
+{% endblock %}

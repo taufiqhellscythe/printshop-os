@@ -1,0 +1,26 @@
+# --- Python ---
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# --- Secrets: NEVER commit ---
+.env
+.env.bak
+.env.bak.*
+windows-agent/config.env
+*.pem
+*.key
+
+# --- Runtime data (customer data, uploads, DB) ---
+data/printshop.db
+data/printshop.db-*
+data/uploads/*
+!data/uploads/.gitkeep
+server.log
+*.log
+
+# --- Build artifacts / scratch ---
+PrintShop-Windows-Agent.zip
+.design-backup/

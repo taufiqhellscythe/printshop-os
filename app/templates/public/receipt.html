@@ -1,0 +1,158 @@
+{% extends "base_public.html" %}
+{% block title %}Struk {{ order.code }} · {{ shop_name }}{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+
+  {# ---- Screen-only header ---- #}
+  <div class="no-print mb-4 flex items-center justify-between gap-3">
+    <a href="/track/{{ order.track_token }}" class="text-sm text-accent-700 hover:underline">&larr; Lacak order</a>
+    <div class="flex gap-2">
+      <button type="button" onclick="window.print()" class="btn btn-secondary text-xs">Simpan / Print</button>
+    </div>
+  </div>
+
+  {# ---- The receipt itself ---- #}
+  <div id="receipt" class="card p-6 print:border-0 print:shadow-none">
+
+    <div class="text-center border-b border-dashed border-ink-300 pb-4 mb-4">
+      <h1 class="text-lg font-bold text-ink-900">{{ shop_name }}</h1>
+      {% if shop_address %}<p class="text-xs text-ink-500 mt-0.5">{{ shop_address }}</p>{% endif %}
+      {% if shop_phone %}<p class="text-xs text-ink-500">WA/Telp: {{ shop_phone }}</p>{% endif %}
+      <p class="text-[11px] tracking-widest text-ink-400 mt-2 uppercase">Struk Pembayaran</p>
+    </div>
+
+    {# ---- Paid / unpaid stamp ---- #}
+    {% if order.payment_status == 'lunas' %}
+    <div class="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-center">
+      <div class="text-emerald-800 font-bold tracking-wide">LUNAS</div>
+      {% if settled_at %}<div class="text-[11px] text-emerald-700 mt-0.5">{{ settled_at }}</div>{% endif %}
+    </div>
+    {% elif order.payment_status == 'dp' %}
+    <div class="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-center">
+      <div class="text-amber-800 font-bold tracking-wide">DP / SEBAGIAN</div>
+      <div class="text-[11px] text-amber-700 mt-0.5">Sisa: {{ rupiah(order.total - (order.paid_amount or 0)) }}</div>
+    </div>
+    {% else %}
+    <div class="mb-4 rounded-xl bg-ink-100 border border-ink-200 px-4 py-3 text-center">
+      <div class="text-ink-700 font-bold tracking-wide">BELUM DIBAYAR</div>
+      <div class="text-[11px] text-ink-500 mt-0.5">Bayar saat ambil atau lewat halaman pembayaran</div>
+    </div>
+    {% endif %}
+
+    {# ---- Meta ---- #}
+    <dl class="text-sm space-y-1.5 mb-4">
+      <div class="flex justify-between gap-3">
+        <dt class="text-ink-500">Kode Order</dt>
+        <dd class="font-semibold text-ink-900">{{ order.code }}</dd>
+      </div>
+      <div class="flex justify-between gap-3">
+        <dt class="text-ink-500">Tanggal</dt>
+        <dd class="text-ink-800">{{ (order.created_at or '')[:16].replace('T', ' ') }}</dd>
+      </div>
+      <div class="flex justify-between gap-3">
+        <dt class="text-ink-500">Pelanggan</dt>
+        <dd class="text-ink-800 text-right">{{ order.customer_name }}</dd>
+      </div>
+      {% if order.customer_phone %}
+      <div class="flex justify-between gap-3">
+        <dt class="text-ink-500">No. HP</dt>
+        <dd class="text-ink-800">{{ order.customer_phone }}</dd>
+      </div>
+      {% endif %}
+      <div class="flex justify-between gap-3">
+        <dt class="text-ink-500">Status Order</dt>
+        <dd>
+          <span class="badge {{ status_colors.get(order.status, 'bg-ink-100 text-ink-700') }}">
+            {{ status_labels.get(order.status, order.status) }}
+          </span>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="border-t border-dashed border-ink-300 pt-4 mb-4">
+      <div class="text-[11px] uppercase tracking-wider text-ink-400 mb-2">Rincian</div>
+      <div class="text-sm space-y-1.5">
+        {% for i in order['items'] %}
+        <div class="flex justify-between gap-3">
+          <span class="text-ink-700">{{ i.service_name }} &times; {{ i.qty }}</span>
+          <span class="text-ink-900 tabular-nums">{{ rupiah(i.line_total) }}</span>
+        </div>
+        {% endfor %}
+        {% for a in order['addons'] %}
+        <div class="flex justify-between gap-3">
+          <span class="text-ink-600">+ {{ a.addon_name }}</span>
+          <span class="text-ink-900 tabular-nums">{{ rupiah(a.price) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ---- Money ---- #}
+    <div class="border-t border-dashed border-ink-300 pt-4 text-sm space-y-1.5">
+      <div class="flex justify-between gap-3">
+        <span class="text-ink-500">Subtotal</span>
+        <span class="text-ink-800 tabular-nums">{{ rupiah(order.subtotal) }}</span>
+      </div>
+      {% if order.discount %}
+      <div class="flex justify-between gap-3">
+        <span class="text-ink-500">Diskon</span>
+        <span class="text-emerald-700 tabular-nums">-{{ rupiah(order.discount) }}</span>
+      </div>
+      {% endif %}
+      {% if order.addons_total %}
+      <div class="flex justify-between gap-3">
+        <span class="text-ink-500">Add-on</span>
+        <span class="text-ink-800 tabular-nums">{{ rupiah(order.addons_total) }}</span>
+      </div>
+      {% endif %}
+      <div class="flex justify-between gap-3 pt-2 border-t border-ink-200">
+        <span class="font-bold text-ink-900">TOTAL</span>
+        <span class="font-bold text-ink-900 text-lg tabular-nums">{{ rupiah(order.total) }}</span>
+      </div>
+      {% if order.payment_method %}
+      <div class="flex justify-between gap-3">
+        <span class="text-ink-500">Metode</span>
+        <span class="text-ink-800">{{ order.payment_method }}</span>
+      </div>
+      {% endif %}
+      {% if order.paid_amount %}
+      <div class="flex justify-between gap-3">
+        <span class="text-ink-500">Dibayar</span>
+        <span class="text-ink-800 tabular-nums">{{ rupiah(order.paid_amount) }}</span>
+      </div>
+      {% endif %}
+      {% if payment and payment.provider_order_id %}
+      <div class="flex justify-between gap-3">
+        <span class="text-ink-500">Ref</span>
+        <span class="text-ink-500 text-[11px] font-mono break-all text-right">{{ payment.provider_order_id }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if order.notes %}
+    <div class="border-t border-dashed border-ink-300 mt-4 pt-3">
+      <div class="text-[11px] uppercase tracking-wider text-ink-400 mb-1">Catatan</div>
+      <p class="text-sm text-ink-700">{{ order.notes }}</p>
+    </div>
+    {% endif %}
+
+    <div class="border-t border-dashed border-ink-300 mt-4 pt-4 text-center">
+      <p class="text-xs text-ink-500">Lacak order: <span class="font-mono">{{ track_url }}</span></p>
+      <p class="text-xs text-ink-400 mt-2">Terima kasih sudah order di {{ shop_name }} &#128522;</p>
+    </div>
+  </div>
+
+  <p class="no-print text-center text-xs text-ink-400 mt-4">
+    Simpan halaman ini sebagai bukti pembayaran (screenshot atau Print &rarr; Save as PDF).
+  </p>
+</div>
+
+<style>
+  @media print {
+    .no-print, header, nav, footer { display: none !important; }
+    body { background: #fff !important; }
+    #receipt { border: 0 !important; box-shadow: none !important; padding: 0 !important; }
+    @page { margin: 10mm; }
+  }
+</style>
+{% endblock %}

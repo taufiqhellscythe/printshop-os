@@ -1,0 +1,99 @@
+{% extends "base_public.html" %}
+{% block title %}Order Print · {{ shop_name }}{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <h1 class="text-3xl font-extrabold tracking-tight text-ink-900 mb-2">Order Print</h1>
+  <p class="text-ink-500 text-lg mb-8">Isi form — dapat kode order dan link lacak otomatis.</p>
+
+  {% if error %}
+  <div class="mb-5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 px-4 py-3 text-sm">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/order" enctype="multipart/form-data" class="card p-6 sm:p-7 space-y-5">
+    <div class="grid sm:grid-cols-2 gap-5">
+      <div class="sm:col-span-2">
+        <label class="label">Nama *</label>
+        <input class="input" name="customer_name" required value="{{ form.customer_name or '' }}" placeholder="Nama lengkap">
+      </div>
+      <div>
+        <label class="label">No. HP / WA</label>
+        <input class="input" name="customer_phone" value="{{ form.customer_phone or '' }}" placeholder="08xxxxxxxxxx">
+      </div>
+      <div>
+        <label class="label">Email</label>
+        <input class="input" type="email" name="customer_email" value="{{ form.customer_email or '' }}" placeholder="opsional">
+      </div>
+    </div>
+
+    <div>
+      <label class="label">Layanan *</label>
+      <select class="input" name="service_key" id="service_key" required>
+        {% for s in services %}
+        <option value="{{ s.key }}" {% if form.service_key==s.key %}selected{% endif %}>{{ s.name }} — {{ rupiah(s.price) }}/{{ s.unit }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="label">Jumlah (qty) *</label>
+      <input class="input" type="number" min="1" name="qty" id="qty" value="{{ form.qty or 1 }}" required>
+    </div>
+
+    <div>
+      <label class="label">Add-on</label>
+      <div class="grid sm:grid-cols-2 gap-2">
+        {% for a in addons %}
+        <label class="flex items-center gap-2.5 rounded-lg border border-ink-200 px-3.5 py-2.5 text-sm hover:bg-ink-50 hover:border-ink-300 cursor-pointer transition-colors">
+          <input type="checkbox" name="addon_keys" value="{{ a.key }}" class="addon-cb accent-ink-900" {% if a.key in (form.addon_keys or []) %}checked{% endif %}>
+          <span class="flex-1 text-ink-700">{{ a.name }}</span>
+          <span class="text-ink-500">{{ rupiah(a.price) }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <label class="label">Upload file (PDF/DOC/JPG/PNG)</label>
+      <input class="input" type="file" name="files" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.zip">
+      <p class="text-xs text-ink-400 mt-1.5">Bisa lebih dari 1 file. Atau bawa file fisik ke toko.</p>
+    </div>
+
+    <div>
+      <label class="label">Catatan</label>
+      <textarea class="input" name="notes" rows="3" placeholder="Contoh: bolak-balik, jilid kiri, margin 2cm">{{ form.notes or '' }}</textarea>
+    </div>
+
+    <div class="rounded-xl bg-ink-50 border border-ink-200/70 p-4">
+      <div class="text-sm text-ink-500">Estimasi total</div>
+      <div class="text-3xl font-bold text-ink-900 tracking-tight mt-0.5" id="live-total">—</div>
+      <div class="text-xs text-ink-500 mt-1.5" id="live-detail"></div>
+    </div>
+
+    <button class="btn btn-primary w-full py-3 text-base" type="submit">Kirim Order</button>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function liveQuote(){
+  const service = document.getElementById('service_key').value;
+  const qty = document.getElementById('qty').value || 1;
+  const addons = [...document.querySelectorAll('.addon-cb:checked')].map(x=>x.value).join(',');
+  const r = await fetch(`/api/quote?service_key=${encodeURIComponent(service)}&qty=${qty}&addons=${encodeURIComponent(addons)}`);
+  const data = await r.json();
+  if(data.ok){
+    document.getElementById('live-total').textContent = data.total_fmt;
+    let d = `Subtotal ${data.subtotal.toLocaleString('id-ID')}`;
+    if(data.discount) d += ` · Diskon ${data.discount.toLocaleString('id-ID')}`;
+    if(data.addons_total) d += ` · Add-on ${data.addons_total.toLocaleString('id-ID')}`;
+    document.getElementById('live-detail').textContent = d;
+  } else {
+    document.getElementById('live-total').textContent = 'Error';
+    document.getElementById('live-detail').textContent = data.error || '';
+  }
+}
+['service_key','qty'].forEach(id=>document.getElementById(id).addEventListener('input', liveQuote));
+document.querySelectorAll('.addon-cb').forEach(el=>el.addEventListener('change', liveQuote));
+liveQuote();
+</script>
+{% endblock %}

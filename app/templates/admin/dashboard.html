@@ -1,0 +1,113 @@
+{% extends "base_admin.html" %}
+{% block title %}Dashboard · PrintShop OS{% endblock %}
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold">Dashboard</h1>
+    <p class="text-slate-500 text-sm">{{ stats.day }} · ringkasan operasional toko</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="/admin/pos" class="btn btn-primary">+ Kasir POS</a>
+    <a href="/admin/kanban" class="btn btn-secondary">Antrian</a>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+  <div class="rounded-2xl bg-white border p-4">
+    <div class="text-xs text-slate-500">Omzet lunas hari ini</div>
+    <div class="text-2xl font-bold text-emerald-600 mt-1">{{ rupiah(stats.revenue_today) }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border p-4">
+    <div class="text-xs text-slate-500">Order hari ini</div>
+    <div class="text-2xl font-bold mt-1">{{ stats.orders_today }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border p-4">
+    <div class="text-xs text-slate-500">Antrian aktif</div>
+    <div class="text-2xl font-bold text-amber-600 mt-1">{{ stats.active_orders }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border p-4">
+    <div class="text-xs text-slate-500">Profit kas hari ini</div>
+    <div class="text-2xl font-bold text-blue-700 mt-1">{{ rupiah(stats.profit_today) }}</div>
+  </div>
+</div>
+
+<div class="grid lg:grid-cols-3 gap-4 mb-6">
+  <div class="lg:col-span-2 rounded-2xl bg-white border p-4">
+    <div class="font-semibold mb-3">Omzet 7 hari</div>
+    <div class="flex items-end gap-2 h-36">
+      {% set ns = namespace(max_r=1) %}
+      {% for s in stats.series %}
+        {% if s.revenue > ns.max_r %}{% set ns.max_r = s.revenue %}{% endif %}
+      {% endfor %}
+      {% for s in stats.series %}
+      <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+        <div class="text-[10px] text-slate-400">{{ s.revenue }}</div>
+        <div class="w-full rounded-t-lg bg-blue-500/90" style="height: {{ ((s.revenue / ns.max_r) * 100)|int if ns.max_r else 0 }}%"></div>
+        <div class="text-[10px] text-slate-500">{{ s.day }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="rounded-2xl bg-white border p-4">
+    <div class="font-semibold mb-3">Status antrian</div>
+    <ul class="space-y-2 text-sm">
+      {% for st, c in stats.by_status.items() %}
+      <li class="flex justify-between">
+        <span class="badge {{ status_colors.get(st, 'bg-slate-100') }}">{{ status_labels.get(st, st) }}</span>
+        <span class="font-semibold">{{ c }}</span>
+      </li>
+      {% else %}
+      <li class="text-slate-400">Antrian kosong 🎉</li>
+      {% endfor %}
+    </ul>
+    <div class="mt-4 pt-3 border-t text-sm text-slate-500">Belum lunas: <b>{{ stats.unpaid }}</b></div>
+  </div>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-4">
+  <div class="rounded-2xl bg-white border p-4">
+    <div class="flex justify-between items-center mb-3">
+      <div class="font-semibold">Order aktif terbaru</div>
+      <a href="/admin/orders" class="text-sm text-blue-600">Lihat semua</a>
+    </div>
+    <div class="space-y-2">
+      {% for o in recent %}
+      <a href="/admin/orders/{{ o.id }}" class="block rounded-xl border px-3 py-2 hover:bg-slate-50">
+        <div class="flex justify-between gap-2">
+          <div class="font-semibold">{{ o.code }}</div>
+          <span class="badge {{ status_colors.get(o.status) }}">{{ status_labels.get(o.status) }}</span>
+        </div>
+        <div class="text-sm text-slate-500">{{ o.customer_name }} · {{ summarize_items(o) }}</div>
+        <div class="text-sm font-semibold text-blue-700">{{ rupiah(o.total) }}</div>
+      </a>
+      {% else %}
+      <div class="text-slate-400 text-sm">Belum ada order aktif.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="rounded-2xl bg-white border p-4">
+    <div class="font-semibold mb-3">⚠️ Stok menipis</div>
+    <ul class="space-y-2 text-sm">
+      {% for i in stats.low_stock %}
+      <li class="flex justify-between rounded-xl bg-rose-50 px-3 py-2 text-rose-800">
+        <span>{{ i.name }}</span>
+        <span class="font-semibold">{{ i.qty }} {{ i.unit }}</span>
+      </li>
+      {% else %}
+      <li class="text-slate-400">Semua stok aman.</li>
+      {% endfor %}
+    </ul>
+    <div class="mt-4">
+      <div class="font-semibold mb-2 text-sm">Top layanan hari ini</div>
+      <ul class="text-sm space-y-1">
+        {% for name, qty in stats.top_services %}
+        <li class="flex justify-between"><span>{{ name }}</span><span class="font-semibold">{{ qty }}</span></li>
+        {% else %}
+        <li class="text-slate-400">Belum ada data.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin · {{ shop_name }}{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: {500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',900:'#0f172a'} },
+          fontFamily: { sans: ['DM Sans', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/app.css">
+  {% block head %}{% endblock %}
+</head>
+<body class="bg-slate-100 text-slate-900 font-sans antialiased min-h-screen">
+  <div class="min-h-screen flex">
+    <!-- Sidebar -->
+    <aside class="hidden md:flex w-60 flex-col bg-brand-900 text-slate-200">
+      <div class="h-14 px-4 flex items-center gap-2 border-b border-white/10 font-bold text-white">
+        <span class="w-8 h-8 rounded-lg bg-brand-600 grid place-items-center text-sm">P</span>
+        PrintShop OS
+      </div>
+      <nav class="flex-1 p-3 space-y-1 text-sm">
+        {% set nav_items = [
+          ('/admin', 'Dashboard'),
+          ('/admin/kanban', 'Antrian Kanban'),
+          ('/admin/orders', 'Semua Order'),
+          ('/admin/print-jobs', 'Printout L3110'),
+          ('/admin/pos', 'Kasir POS'),
+          ('/admin/customers', 'Pelanggan'),
+          ('/admin/inventory', 'Stok L3110'),
+          ('/admin/services', 'Harga & Layanan'),
+          ('/admin/expenses', 'Pengeluaran'),
+          ('/admin/reports', 'Laporan'),
+        ] %}
+        {% for href, label in nav_items %}
+        <a href="{{ href }}" class="block px-3 py-2 rounded-lg hover:bg-white/10 {% if request.url.path == href or (href != '/admin' and request.url.path.startswith(href)) %}bg-white/15 text-white{% endif %}">{{ label }}</a>
+        {% endfor %}
+      </nav>
+      <div class="p-3 border-t border-white/10 text-xs">
+        <div class="px-3 mb-2 text-slate-400">{{ user.full_name or user.username }}</div>
+        <a href="/" class="block px-3 py-2 rounded-lg hover:bg-white/10">← Portal</a>
+        <a href="/admin/logout" class="block px-3 py-2 rounded-lg hover:bg-white/10 text-rose-300">Logout</a>
+      </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0">
+      <!-- Mobile topbar -->
+      <header class="md:hidden sticky top-0 z-40 bg-brand-900 text-white">
+        <div class="h-14 px-3 flex items-center justify-between">
+          <div class="font-bold">PrintShop OS</div>
+          <details class="relative">
+            <summary class="list-none cursor-pointer px-3 py-1 rounded-lg bg-white/10">Menu</summary>
+            <div class="absolute right-0 mt-2 w-56 bg-white text-slate-800 rounded-xl shadow-xl border p-2 text-sm z-50">
+              <a class="block px-3 py-2 rounded-lg hover:bg-slate-100" href="/admin">Dashboard</a>
+              <a class="block px-3 py-2 rounded-lg hover:bg-slate-100" href="/admin/kanban">Kanban</a>
+              <a class="block px-3 py-2 rounded-lg hover:bg-slate-100" href="/admin/orders">Order</a>
+              <a class="block px-3 py-2 rounded-lg hover:bg-slate-100" href="/admin/print-jobs">Printout</a>
+              <a class="block px-3 py-2 rounded-lg hover:bg-slate-100" href="/admin/pos">POS</a>
+              <a class="block px-3 py-2 rounded-lg hover:bg-slate-100" href="/admin/inventory">Stok</a>
+              <a class="block px-3 py-2 rounded-lg hover:bg-slate-100" href="/admin/reports">Laporan</a>
+              <a class="block px-3 py-2 rounded-lg hover:bg-slate-100" href="/admin/logout">Logout</a>
+            </div>
+          </details>
+        </div>
+      </header>
+
+      <main class="flex-1 p-4 md:p-6">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,124 @@
+{% extends "base_public.html" %}
+{% block title %}{{ shop_name }} — Print Online{% endblock %}
+{% block content %}
+<section class="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+  <div>
+    <div class="inline-flex items-center gap-2 text-xs font-medium px-3 py-1 rounded-full bg-ink-50 text-ink-600 border border-ink-200/70 mb-6">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+      Web-to-Print · Real-time tracking
+    </div>
+    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-ink-900 leading-[1.1]">
+      Order print<br>tanpa ribet.
+    </h1>
+    <p class="mt-5 text-ink-500 text-lg leading-relaxed max-w-md">
+      Upload file, pilih layanan, bayar di tempat atau transfer. Lacak progress dari HP — dari antrian sampai siap diambil.
+    </p>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a href="/order" class="btn btn-primary px-5 py-2.5">Order Sekarang</a>
+      <a href="/harga" class="btn btn-secondary px-5 py-2.5">Lihat Harga</a>
+    </div>
+    <div class="mt-10 flex items-center gap-8 text-sm">
+      <div>
+        <div class="text-2xl font-bold text-ink-900 tracking-tight">1 menit</div>
+        <div class="text-ink-500 mt-0.5">buat order</div>
+      </div>
+      <div class="w-px h-10 bg-ink-200"></div>
+      <div>
+        <div class="text-2xl font-bold text-ink-900 tracking-tight">Live</div>
+        <div class="text-ink-500 mt-0.5">status print</div>
+      </div>
+      <div class="w-px h-10 bg-ink-200"></div>
+      <div>
+        <div class="text-2xl font-bold text-ink-900 tracking-tight">Transparan</div>
+        <div class="text-ink-500 mt-0.5">harga & diskon</div>
+      </div>
+    </div>
+  </div>
+  <div class="card p-6 shadow-lift">
+    <div class="text-sm font-medium text-ink-500 mb-1">Estimasi cepat</div>
+    <div class="text-lg font-semibold text-ink-900 mb-5">Kalkulator Harga</div>
+    <div class="space-y-4">
+      <div>
+        <label class="label">Layanan</label>
+        <select id="home-service" class="input">
+          {% for s in services %}
+          <option value="{{ s.key }}" data-price="{{ s.price }}">{{ s.name }} — {{ rupiah(s.price) }}/{{ s.unit }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label">Qty</label>
+        <input id="home-qty" type="number" min="1" value="10" class="input">
+      </div>
+      <div id="home-quote" class="rounded-xl bg-ink-50 border border-ink-200/70 p-4">
+        <div class="text-sm text-ink-500">Total estimasi</div>
+        <div class="text-3xl font-bold text-ink-900 tracking-tight mt-0.5" id="home-total">—</div>
+        <div class="text-xs text-ink-500 mt-1.5" id="home-detail"></div>
+      </div>
+      <a href="/order" class="btn btn-primary w-full py-2.5">Lanjut Order →</a>
+    </div>
+  </div>
+</section>
+
+<section class="mt-20">
+  <div class="flex items-end justify-between mb-6">
+    <h2 class="text-xl font-bold text-ink-900 tracking-tight">Layanan populer</h2>
+    <a href="/harga" class="text-sm font-medium text-accent-600 hover:text-accent-700">Lihat semua →</a>
+  </div>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for s in services[:6] %}
+    <div class="card p-5 hover:shadow-lift transition-shadow duration-200">
+      <div class="text-xs uppercase tracking-wide text-ink-400 font-medium">{{ s.category }}</div>
+      <div class="font-semibold text-ink-900 mt-1.5">{{ s.name }}</div>
+      <div class="text-ink-900 font-bold mt-2 text-lg tracking-tight">{{ rupiah(s.price) }}<span class="text-ink-400 font-normal text-sm">/{{ s.unit }}</span></div>
+      <p class="text-sm text-ink-500 mt-2 leading-relaxed">{{ s.description }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="mt-20">
+  <h2 class="text-xl font-bold text-ink-900 tracking-tight mb-6">Cara kerja</h2>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="card p-5">
+      <div class="w-8 h-8 rounded-lg bg-accent-600 text-white grid place-items-center text-sm font-bold mb-3">1</div>
+      <div class="font-semibold text-ink-900">Order</div>
+      <p class="text-sm text-ink-500 mt-1 leading-relaxed">Pilih layanan, qty, upload file.</p>
+    </div>
+    <div class="card p-5">
+      <div class="w-8 h-8 rounded-lg bg-accent-600 text-white grid place-items-center text-sm font-bold mb-3">2</div>
+      <div class="font-semibold text-ink-900">Konfirmasi</div>
+      <p class="text-sm text-ink-500 mt-1 leading-relaxed">Kami cek file & masuk antrian.</p>
+    </div>
+    <div class="card p-5">
+      <div class="w-8 h-8 rounded-lg bg-accent-600 text-white grid place-items-center text-sm font-bold mb-3">3</div>
+      <div class="font-semibold text-ink-900">Print</div>
+      <p class="text-sm text-ink-500 mt-1 leading-relaxed">Diproses & dicetak.</p>
+    </div>
+    <div class="card p-5">
+      <div class="w-8 h-8 rounded-lg bg-accent-600 text-white grid place-items-center text-sm font-bold mb-3">4</div>
+      <div class="font-semibold text-ink-900">Ambil</div>
+      <p class="text-sm text-ink-500 mt-1 leading-relaxed">Notifikasi siap — bayar & ambil.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+async function refreshHomeQuote(){
+  const service = document.getElementById('home-service').value;
+  const qty = document.getElementById('home-qty').value || 1;
+  const r = await fetch(`/api/quote?service_key=${encodeURIComponent(service)}&qty=${qty}`);
+  const data = await r.json();
+  if(data.ok){
+    document.getElementById('home-total').textContent = data.total_fmt;
+    let d = `Subtotal ${data.subtotal.toLocaleString('id-ID')}`;
+    if(data.discount) d += ` · Diskon ${data.discount.toLocaleString('id-ID')}`;
+    document.getElementById('home-detail').textContent = d;
+  }
+}
+document.getElementById('home-service').addEventListener('change', refreshHomeQuote);
+document.getElementById('home-qty').addEventListener('input', refreshHomeQuote);
+refreshHomeQuote();
+</script>
+{% endblock %}

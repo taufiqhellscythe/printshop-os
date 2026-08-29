@@ -1,0 +1,65 @@
+{% extends "base_public.html" %}
+{% block title %}Pembayaran · {{ shop_name }}{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+  <h1 class="text-3xl font-extrabold tracking-tight text-ink-900 mb-1">Pembayaran QRIS</h1>
+  <p class="text-ink-500 mb-6">Order <span class="font-semibold text-ink-700">{{ order.code }}</span></p>
+
+  {% if error %}
+  <div class="mb-5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 px-4 py-3 text-sm">
+    {{ error }}
+    <div class="mt-2"><a href="/track/{{ order.track_token }}" class="underline">Lihat status order tanpa bayar online →</a></div>
+  </div>
+  {% else %}
+  <div class="card p-6 text-center">
+    <div class="text-sm text-ink-500">Total tagihan</div>
+    <div class="text-3xl font-bold text-ink-900 tracking-tight mt-0.5 mb-5">{{ rupiah(order.total) }}</div>
+
+    {% if payment and payment.qr_image_url %}
+    <div class="bg-white rounded-2xl border border-ink-200 p-4 inline-block">
+      <img src="{{ payment.qr_image_url }}" alt="QRIS {{ order.code }}" class="w-56 h-56 object-contain mx-auto" />
+    </div>
+    <p class="text-sm text-ink-500 mt-4 leading-relaxed">
+      Scan QR di atas pakai aplikasi apa pun yang mendukung QRIS
+      (GoPay, OVO, DANA, ShopeePay, m-banking). Pembayaran terdeteksi otomatis.
+    </p>
+    {% else %}
+    <div class="text-ink-500 py-8">Menyiapkan kode QR…</div>
+    {% endif %}
+
+    <div id="pay-status" class="mt-5 rounded-xl bg-accent-50 border border-accent-100 px-4 py-3 text-sm text-accent-700 flex items-center justify-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-accent-500 animate-pulse"></span>
+      Menunggu pembayaran…
+    </div>
+  </div>
+
+  <div class="text-center mt-5">
+    <a href="/track/{{ order.track_token }}" class="text-sm text-ink-500 hover:text-ink-800">Bayar nanti / lihat status order →</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+{% if not error %}
+<script>
+const token = {{ order.track_token | tojson }};
+let stopped = false;
+async function checkStatus(){
+  if(stopped) return;
+  try {
+    const r = await fetch(`/api/payment/status/${token}`);
+    const d = await r.json();
+    if(d.ok && d.paid){
+      stopped = true;
+      const box = document.getElementById('pay-status');
+      box.className = 'mt-5 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 font-medium';
+      box.textContent = 'Pembayaran diterima! Mengalihkan…';
+      setTimeout(()=>{ window.location.href = d.redirect || `/track/${token}`; }, 1200);
+    }
+  } catch(e){ /* keep polling */ }
+}
+setInterval(checkStatus, 3000);
+checkStatus();
+</script>
+{% endif %}
+{% endblock %}

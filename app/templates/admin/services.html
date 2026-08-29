@@ -1,0 +1,48 @@
+{% extends "base_admin.html" %}
+{% block title %}Layanan · PrintShop OS{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Harga & Layanan</h1>
+<div class="table-wrap mb-6">
+  <table class="data">
+    <thead><tr><th>Layanan</th><th>Kategori</th><th>Harga</th><th>Min</th><th>Ubah harga</th></tr></thead>
+    <tbody>
+      {% for s in services %}
+      <tr>
+        <td>
+          <div class="font-semibold">{{ s.name }}</div>
+          <div class="text-xs text-slate-400">{{ s.key }}</div>
+        </td>
+        <td>{{ s.category }}</td>
+        <td class="font-semibold">{{ rupiah(s.price) }}/{{ s.unit }}</td>
+        <td>{{ rupiah(s.min_charge) }}</td>
+        <td>
+          <form method="post" action="/admin/services/price" class="flex gap-1">
+            <input type="hidden" name="key" value="{{ s.key }}">
+            <input class="input w-28 py-1 text-xs" type="number" name="price" value="{{ s.price }}">
+            <button class="btn btn-secondary text-xs py-1" type="submit">Save</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="grid md:grid-cols-2 gap-4">
+  <div class="rounded-2xl bg-white border p-4">
+    <div class="font-semibold mb-2">Add-on</div>
+    <ul class="text-sm space-y-1">
+      {% for a in addons %}
+      <li class="flex justify-between"><span>{{ a.name }}</span><span>{{ rupiah(a.price) }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="rounded-2xl bg-white border p-4">
+    <div class="font-semibold mb-2">Diskon volume</div>
+    <ul class="text-sm space-y-1">
+      {% for d in discounts %}
+      <li class="flex justify-between"><span>{{ d.name }}</span><span class="text-emerald-600 font-semibold">{{ d.percent }}%</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

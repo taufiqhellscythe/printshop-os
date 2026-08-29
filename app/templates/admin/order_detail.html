@@ -1,0 +1,201 @@
+{% extends "base_admin.html" %}
+{% block title %}{{ order.code }} · Order{% endblock %}
+{% block content %}
+<div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+  <div>
+    <a href="/admin/orders" class="text-sm text-blue-600">← Orders</a>
+    <h1 class="text-2xl font-bold flex items-center gap-2">
+      {{ order.code }}
+      {% if order.priority %}<span class="badge bg-amber-100 text-amber-800">RUSH</span>{% endif %}
+    </h1>
+    <div class="flex flex-wrap gap-2 mt-1">
+      <span class="badge {{ status_colors.get(order.status) }}">{{ status_labels.get(order.status) }}</span>
+      <span class="badge {% if order.payment_status=='lunas' %}bg-emerald-100 text-emerald-800{% else %}bg-rose-100 text-rose-800{% endif %}">Bayar: {{ order.payment_status }}</span>
+      <span class="text-sm text-slate-500">{{ order.source }}</span>
+    </div>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <form method="post" action="/admin/orders/{{ order.id }}/print-all">
+      <button class="btn btn-primary" type="submit">🖨️ Auto Print Semua</button>
+    </form>
+    <a class="btn btn-secondary" href="/admin/orders/{{ order.id }}/receipt" target="_blank">🧾 Struk</a>
+    <a class="btn btn-secondary" href="/track/{{ order.track_token }}" target="_blank">Link lacak</a>
+  </div>
+</div>
+
+{% if request.query_params.get('print') %}
+<div class="mb-4 rounded-xl border px-4 py-3 text-sm
+  {% if request.query_params.get('print')=='ok' %}bg-emerald-50 text-emerald-800 border-emerald-200
+  {% elif request.query_params.get('print')=='queued' %}bg-amber-50 text-amber-800 border-amber-200
+  {% elif request.query_params.get('print')=='nofile' %}bg-slate-50 text-slate-700 border-slate-200
+  {% else %}bg-rose-50 text-rose-800 border-rose-200{% endif %}">
+  {% if request.query_params.get('print')=='ok' %}✅ Print job berhasil dikirim ke printer.
+  {% elif request.query_params.get('print')=='queued' %}⏳ Job masuk antrian — tunggu print agent di PC toko / pasang CUPS.
+  {% elif request.query_params.get('print')=='nofile' %}⚠️ Tidak ada file untuk diprint.
+  {% else %}❌ Print gagal. Cek halaman Printout L3110. {% endif %}
+</div>
+{% endif %}
+
+<div class="grid lg:grid-cols-3 gap-4">
+  <div class="lg:col-span-2 space-y-4">
+    <div class="rounded-2xl bg-white border p-4">
+      <div class="font-semibold mb-3">Detail pelanggan</div>
+      <div class="grid sm:grid-cols-2 gap-3 text-sm">
+        <div><div class="text-slate-400">Nama</div><div class="font-semibold">{{ order.customer_name }}</div></div>
+        <div><div class="text-slate-400">HP</div><div>{{ order.customer_phone or '-' }}</div></div>
+        <div><div class="text-slate-400">Email</div><div>{{ order.customer_email or '-' }}</div></div>
+        <div><div class="text-slate-400">Total</div><div class="text-xl font-bold text-blue-700">{{ rupiah(order.total) }}</div></div>
+      </div>
+      {% if order.notes %}<div class="mt-3 text-sm"><span class="text-slate-400">Catatan pelanggan:</span> {{ order.notes }}</div>{% endif %}
+    </div>
+
+    <div class="rounded-2xl bg-white border p-4">
+      <div class="font-semibold mb-3">Item & harga</div>
+      <ul class="space-y-2 text-sm">
+        {% for i in order["items"] %}
+        <li class="flex justify-between border-b pb-2">
+          <div>
+            <div class="font-medium">{{ i.service_name }}</div>
+            <div class="text-xs text-slate-400">{{ i.qty }} × {{ rupiah(i.unit_price) }}{% if i.line_discount %} · diskon {{ rupiah(i.line_discount) }}{% endif %}</div>
+          </div>
+          <div class="font-semibold">{{ rupiah(i.line_total) }}</div>
+        </li>
+        {% endfor %}
+        {% for a in order["addons"] %}
+        <li class="flex justify-between"><span>+ {{ a.addon_name }}</span><span class="font-semibold">{{ rupiah(a.price) }}</span></li>
+        {% endfor %}
+      </ul>
+      <div class="mt-3 pt-3 border-t text-sm space-y-1">
+        <div class="flex justify-between"><span>Subtotal</span><span>{{ rupiah(order.subtotal) }}</span></div>
+        <div class="flex justify-between"><span>Diskon</span><span>-{{ rupiah(order.discount) }}</span></div>
+        <div class="flex justify-between"><span>Add-on</span><span>{{ rupiah(order.addons_total) }}</span></div>
+        <div class="flex justify-between font-bold text-base"><span>Total</span><span>{{ rupiah(order.total) }}</span></div>
+      </div>
+    </div>
+
+    <div class="rounded-2xl bg-white border p-4">
+      <div class="font-semibold mb-3">File upload</div>
+      {% if order["files"] %}
+      <ul class="space-y-3">
+        {% for f in order["files"] %}
+        <li class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
+          <div class="text-sm">
+            <div class="font-medium">{{ f.filename }}</div>
+            <div class="text-xs text-slate-400">{{ f.mime or '' }} · {{ f.size_bytes or 0 }} bytes</div>
+          </div>
+          <div class="flex gap-2">
+            <a class="btn btn-secondary text-xs" href="/uploads/{{ f.stored_path.split('/')[-1] }}" target="_blank">Buka</a>
+            <form method="post" action="/admin/orders/{{ order.id }}/print" class="flex gap-1 items-center">
+              <input type="hidden" name="file_id" value="{{ f.id }}">
+              <input class="input w-16 text-xs py-1" type="number" name="copies" value="1" min="1">
+              <button class="btn btn-primary text-xs py-1" type="submit">Print</button>
+            </form>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% if printers %}
+      <p class="text-xs text-slate-400 mt-2">Printer lokal terdeteksi: {{ printers|join(', ') }}</p>
+      {% else %}
+      <p class="text-xs text-slate-400 mt-2">Server ini tidak lihat CUPS. Job akan di-queue untuk <b>print agent</b> di PC L3110, atau print manual.</p>
+      {% endif %}
+      {% else %}
+      <div class="text-sm text-slate-400">Tidak ada file — kemungkinan walk-in / file fisik.</div>
+      {% endif %}
+    </div>
+
+    <div class="rounded-2xl bg-white border p-4">
+      <div class="font-semibold mb-3">Print jobs</div>
+      {% if order.print_jobs %}
+      <ul class="space-y-2 text-sm">
+        {% for j in order.print_jobs %}
+        <li class="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2">
+          <div>
+            <span class="font-mono text-xs">#{{ j.id }}</span>
+            <span class="badge ml-1 {% if j.status=='done' %}bg-emerald-100 text-emerald-800{% elif j.status=='failed' %}bg-rose-100 text-rose-800{% elif j.status=='printing' %}bg-orange-100 text-orange-800{% else %}bg-amber-100 text-amber-800{% endif %}">{{ j.status }}</span>
+            <div class="text-xs text-slate-500">x{{ j.copies }} · {{ j.color_mode }} · {{ j.media }}{% if j.duplex %} · duplex{% endif %}</div>
+            {% if j.last_error %}<div class="text-xs text-rose-600">{{ j.last_error }}</div>{% endif %}
+          </div>
+          {% if j.status in ['failed','done'] %}
+          <form method="post" action="/admin/print-jobs/{{ j.id }}/retry">
+            <button class="btn btn-secondary text-xs py-1" type="submit">Retry</button>
+          </form>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="text-sm text-slate-400">Belum ada job print. Klik <b>Auto Print Semua</b> atau pindah status ke Antrian/Proses.</div>
+      {% endif %}
+    </div>
+
+    <div class="rounded-2xl bg-white border p-4">
+      <div class="font-semibold mb-3">Timeline</div>
+      <ol class="space-y-2 text-sm">
+        {% for e in order["events"] %}
+        <li class="flex gap-3">
+          <div class="w-2 h-2 mt-1.5 rounded-full bg-blue-500"></div>
+          <div>
+            <div>{{ e.message }}</div>
+            <div class="text-xs text-slate-400">{{ e.created_at[:19].replace('T',' ') }} · {{ e.actor or '-' }}</div>
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+
+  <div class="space-y-4">
+    <form method="post" action="/admin/orders/{{ order.id }}/status" class="rounded-2xl bg-white border p-4 space-y-3">
+      <div class="font-semibold">Update status</div>
+      <div>
+        <label class="label">Status produksi</label>
+        <select class="input" name="status">
+          {% for st in status_flow + ['batal'] %}
+          <option value="{{ st }}" {% if order.status==st %}selected{% endif %}>{{ status_labels.get(st, st) }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label">Prioritas (0 normal, 1 rush)</label>
+        <input class="input" type="number" name="priority" value="{{ order.priority }}" min="0" max="5">
+      </div>
+      <div>
+        <label class="label">Catatan internal</label>
+        <textarea class="input" name="internal_notes" rows="2">{{ order.internal_notes or '' }}</textarea>
+      </div>
+      <div>
+        <label class="label">Status bayar</label>
+        <select class="input" name="payment_status">
+          <option value="" {% if not order.payment_status %}selected{% endif %}>-</option>
+          <option value="belum" {% if order.payment_status=='belum' %}selected{% endif %}>belum</option>
+          <option value="dp" {% if order.payment_status=='dp' %}selected{% endif %}>dp</option>
+          <option value="lunas" {% if order.payment_status=='lunas' %}selected{% endif %}>lunas</option>
+        </select>
+      </div>
+      <div>
+        <label class="label">Metode bayar</label>
+        <select class="input" name="payment_method">
+          {% for m in ['', 'Tunai', 'Transfer', 'QRIS', 'E-Wallet'] %}
+          <option value="{{ m }}" {% if order.payment_method==m %}selected{% endif %}>{{ m or '-' }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="label">Jumlah dibayar</label>
+        <input class="input" type="number" name="paid_amount" value="{{ order.paid_amount or 0 }}">
+      </div>
+      <button class="btn btn-primary w-full" type="submit">Simpan</button>
+    </form>
+
+    <form method="post" action="/admin/orders/{{ order.id }}/pay" class="rounded-2xl bg-white border p-4 space-y-3">
+      <div class="font-semibold">Bayar cepat</div>
+      <select class="input" name="payment_method">
+        <option>Tunai</option><option>Transfer</option><option>QRIS</option><option>E-Wallet</option>
+      </select>
+      <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="mark_siap" value="1" checked> Tandai siap diambil</label>
+      <button class="btn btn-primary w-full bg-emerald-600 hover:bg-emerald-700" type="submit">Tandai LUNAS {{ rupiah(order.total) }}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

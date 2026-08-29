@@ -1,0 +1,55 @@
+{% extends "base_admin.html" %}
+{% block title %}Kanban · PrintShop OS{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-bold">Antrian Produksi</h1>
+    <p class="text-sm text-slate-500">Kanban floor — geser status cepat per job</p>
+  </div>
+  <a href="/admin/pos" class="btn btn-primary">+ POS</a>
+</div>
+
+<div class="flex gap-3 overflow-x-auto pb-4">
+  {% for col in kanban_columns %}
+  <div class="kanban-col">
+    <div class="flex items-center justify-between px-1 py-2">
+      <div class="text-xs font-bold uppercase tracking-wide text-slate-600">{{ status_labels.get(col) }}</div>
+      <div class="text-xs font-semibold bg-white rounded-full px-2 py-0.5">{{ board[col]|length }}</div>
+    </div>
+    {% for o in board[col] %}
+    <div class="kanban-card {% if o.priority %}ring-2 ring-amber-400{% endif %}">
+      <div class="flex justify-between gap-2 mb-1">
+        <a href="/admin/orders/{{ o.id }}" class="font-bold text-sm text-blue-700">{{ o.code }}</a>
+        {% if o.priority %}<span class="text-[10px] font-bold text-amber-600">RUSH</span>{% endif %}
+      </div>
+      <div class="text-sm font-medium">{{ o.customer_name }}</div>
+      <div class="text-xs text-slate-500 mt-1">{{ summarize_items(o) }}</div>
+      <div class="flex justify-between items-center mt-2">
+        <div class="text-sm font-semibold">{{ rupiah(o.total) }}</div>
+        <div class="text-[10px] {% if o.payment_status=='lunas' %}text-emerald-600{% else %}text-rose-500{% endif %}">{{ o.payment_status }}</div>
+      </div>
+      <div class="mt-2 flex flex-wrap gap-1">
+        {% set next_map = {
+          'baru':'dikonfirmasi',
+          'dikonfirmasi':'prepress',
+          'prepress':'antrian',
+          'antrian':'proses',
+          'proses':'finishing',
+          'finishing':'siap',
+          'siap':'diambil'
+        } %}
+        {% if next_map.get(col) %}
+        <form method="post" action="/admin/orders/{{ o.id }}/quick-status">
+          <input type="hidden" name="status" value="{{ next_map[col] }}">
+          <button class="text-[11px] px-2 py-1 rounded-lg bg-blue-600 text-white font-semibold">→ {{ status_labels.get(next_map[col]) }}</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="text-xs text-slate-400 px-2 py-6 text-center">Kosong</div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

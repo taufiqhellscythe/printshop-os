@@ -1,0 +1,76 @@
+{% extends "base_admin.html" %}
+{% block title %}Print Jobs · PrintShop OS{% endblock %}
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-4">
+  <div>
+    <h1 class="text-2xl font-bold">Antrian Printout</h1>
+    <p class="text-sm text-slate-500">Job ke Epson L3110 via CUPS lokal atau print agent PC toko</p>
+  </div>
+  <form method="get" class="flex gap-2">
+    <select class="input" name="status">
+      <option value="">Semua</option>
+      {% for s in ['queued','printing','done','failed'] %}
+      <option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-secondary" type="submit">Filter</button>
+  </form>
+</div>
+
+<div class="rounded-2xl bg-white border p-4 mb-4 text-sm">
+  <div class="font-semibold mb-1">Status printer server</div>
+  {% if printer.ok %}
+  <div class="text-emerald-700">✅ {{ printer.printer or 'Printer siap' }} {% if printer.raw %}<span class="text-slate-500">— {{ printer.raw }}</span>{% endif %}</div>
+  {% else %}
+  <div class="text-amber-700">⚠️ {{ printer.error or 'CUPS belum siap di VPS' }}</div>
+  <div class="text-slate-500 mt-1">Normal kalau web jalan di cloud. Jalankan <code>scripts/print_agent.py</code> di PC yang USB-nya ke L3110.</div>
+  {% endif %}
+  {% if printer.printers %}
+  <div class="text-xs text-slate-400 mt-1">Queue terdeteksi: {{ printer.printers|join(', ') }}</div>
+  {% endif %}
+</div>
+
+<div class="table-wrap">
+  <table class="data">
+    <thead>
+      <tr>
+        <th>ID</th><th>Order</th><th>File</th><th>Setting</th><th>Status</th><th>Worker</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td class="font-mono text-xs">#{{ j.id }}</td>
+        <td>
+          {% if j.order %}
+          <a class="text-blue-600 font-semibold" href="/admin/orders/{{ j.order_id }}">{{ j.order.code }}</a>
+          <div class="text-xs text-slate-400">{{ j.order.customer_name }}</div>
+          {% else %}
+          #{{ j.order_id }}
+          {% endif %}
+        </td>
+        <td class="text-sm">{{ (j.file.filename if j.file else '-') }}</td>
+        <td class="text-xs text-slate-600">
+          x{{ j.copies }} · {{ j.color_mode }} · {{ j.media }}
+          {% if j.duplex %} · duplex{% endif %}
+        </td>
+        <td>
+          <span class="badge {% if j.status=='done' %}bg-emerald-100 text-emerald-800{% elif j.status=='failed' %}bg-rose-100 text-rose-800{% elif j.status=='printing' %}bg-orange-100 text-orange-800{% else %}bg-amber-100 text-amber-800{% endif %}">{{ j.status }}</span>
+          {% if j.last_error %}<div class="text-[11px] text-rose-600 mt-1">{{ j.last_error }}</div>{% endif %}
+        </td>
+        <td class="text-xs">{{ j.claimed_by or '-' }}</td>
+        <td>
+          {% if j.status in ['failed','done'] %}
+          <form method="post" action="/admin/print-jobs/{{ j.id }}/retry">
+            <button class="btn btn-secondary text-xs py-1" type="submit">Retry</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="text-center text-slate-400 py-8">Belum ada print job</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

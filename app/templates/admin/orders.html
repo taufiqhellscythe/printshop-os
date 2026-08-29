@@ -1,0 +1,53 @@
+{% extends "base_admin.html" %}
+{% block title %}Orders · PrintShop OS{% endblock %}
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-4">
+  <div>
+    <h1 class="text-2xl font-bold">Semua Order</h1>
+    <p class="text-sm text-slate-500">Cari, filter, kelola</p>
+  </div>
+  <a href="/admin/pos" class="btn btn-primary">+ Order POS</a>
+</div>
+
+<form class="flex flex-wrap gap-2 mb-4" method="get">
+  <input class="input max-w-xs" name="q" value="{{ q }}" placeholder="Kode / nama / HP">
+  <select class="input max-w-[180px]" name="status">
+    <option value="">Semua status</option>
+    {% for st, label in status_labels.items() %}
+    <option value="{{ st }}" {% if status==st %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-secondary" type="submit">Filter</button>
+</form>
+
+<div class="table-wrap">
+  <table class="data">
+    <thead>
+      <tr>
+        <th>Kode</th><th>Pelanggan</th><th>Item</th><th>Total</th><th>Status</th><th>Bayar</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in orders %}
+      <tr>
+        <td class="font-semibold whitespace-nowrap">
+          {% if o.priority %}<span class="text-amber-500">⚡</span>{% endif %}
+          {{ o.code }}
+        </td>
+        <td>
+          <div>{{ o.customer_name }}</div>
+          <div class="text-xs text-slate-400">{{ o.customer_phone or '' }}</div>
+        </td>
+        <td class="text-xs text-slate-600 max-w-[220px]">{{ summarize_items(o) }}</td>
+        <td class="font-semibold whitespace-nowrap">{{ rupiah(o.total) }}</td>
+        <td><span class="badge {{ status_colors.get(o.status) }}">{{ status_labels.get(o.status) }}</span></td>
+        <td class="text-xs">{{ o.payment_status }}{% if o.payment_method %}<br>{{ o.payment_method }}{% endif %}</td>
+        <td><a class="text-blue-600 text-sm font-semibold" href="/admin/orders/{{ o.id }}">Detail</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="text-center text-slate-400 py-8">Belum ada order</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
